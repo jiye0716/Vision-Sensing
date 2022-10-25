@@ -5,7 +5,7 @@ import cv2IP
 
 ip = cv2IP.AlphaBlend()
 # 讀取圖片 load image
-img1 = ip.ImRead(r"C:/testAI/Vision-Sensing/Imgs/bridge.png")
+img1 = ip.ImRead(r"C:/testAI/Vision-Sensing/Imgs/halloween.png")
 print(img1.shape)  # 圖片大小
 # img1 = cv2.resize(img1, (750, 500))
 # cow = img1[180:, 0:375]
