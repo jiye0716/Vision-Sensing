@@ -25,7 +25,7 @@ alpha_girl = np.float32(girl_split[1])/255
 
 # print(back.shape)  # 圖片大小
 i = 10
-for i in range(10, 110, 10):
+for i in range(10, 130, 10):
     back = ip.ImRead(r"C:/testAI/Vision-Sensing/Imgs/bridge.jpg")
     ROI_cow = back[130:270, i:i+140, :]
     ROI_girl = back[130:270, 360-i: 500-i, :]
@@ -39,3 +39,4 @@ for i in range(10, 110, 10):
     back[130:270, 360-i: 500-i, :] = out_girl
     ip.ImWindow("AlphaBlending Result")
     ip.ImShow("AlphaBlending Result", back)
+cv2.waitKey()

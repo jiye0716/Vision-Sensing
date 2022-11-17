@@ -19,18 +19,24 @@ fore_girl = np.float32(girl_split[0])
 # ip.ImShow("Alpha Channel", cow)
 alpha_cow = np.float32(cow_split[1])/255
 alpha_girl = np.float32(girl_split[1])/255
-back = ip.ImRead(r"C:/testAI/Vision-Sensing/Imgs/bridge.jpg")
-print(back.shape)  # 圖片大小
-# back = cv2.resize(back, (1000, 600))
-# # ImDim = np.shape(fore_cow)
-# # if (ImDim[0] != back.shape[0] or ImDim[1] != back.shape[1]):
-# #     back = cv2.resize(back, (ImDim[1], ImDim[0]))
-
-# k = 0
 
 
-# back = np.float32(back)
-# out = ip.DoBlending(fore_cow, back, alpha_cow)
-# out = np.uint8(out)
-ip.ImWindow("AlphaBlending Result")
-ip.ImShow("AlphaBlending Result", back)
+# back = ip.ImRead(r"C:/testAI/Vision-Sensing/Imgs/bridge.jpg")
+
+# print(back.shape)  # 圖片大小
+i = 10
+for i in range(10, 130, 10):
+    back = ip.ImRead(r"C:/testAI/Vision-Sensing/Imgs/bridge.jpg")
+    ROI_cow = back[130:270, i:i+140, :]
+    ROI_girl = back[130:270, 360-i: 500-i, :]
+    ROI_cow = np.float32(ROI_cow)
+    ROI_girl = np.float32(ROI_girl)
+    out_cow = ip.DoBlending(fore_cow, ROI_cow, alpha_cow)
+    out_girl = ip.DoBlending(fore_girl, ROI_girl, alpha_girl)
+    out_cow = np.uint8(out_cow)
+    out_girl = np.uint8(out_girl)
+    back[130:270, i:i+140, :] = out_cow
+    back[130:270, 360-i: 500-i, :] = out_girl
+    ip.ImWindow("AlphaBlending Result")
+    ip.ImShow("AlphaBlending Result", back)
+cv2.waitKey()

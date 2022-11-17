@@ -19,10 +19,9 @@ class BaseIP(object):
     def ImShow(winname, img):
         cv.imshow(winname, img)
         cv.waitKey(1000)
-        cv.destroyAllWindows()
+        # cv.destroyAllWindows()
 
     # 創建顯示視窗
-
     @staticmethod
     def ImWindow(winname):
         cv.namedWindow(winname, cv.WINDOW_AUTOSIZE)
