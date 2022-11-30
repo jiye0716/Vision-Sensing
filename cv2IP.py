@@ -76,15 +76,9 @@ class HistIP(BaseIP):
         return SrcColor1, SrcColor2, SrcColor3
 
     @staticmethod
-    def ShowColorHist(image):
+    def ShowColorHist(image, bhist, ghist, rhist):
         histGraph = np.zeros([256, 256, 3], np.uint8)
-        colorBlue = [255, 0, 0]
-        colorGreen = [0, 255, 0]
-        colorRed = [0, 0, 255]
         b, g, r = cv2.split(image)
-        bhist = cv2.calcHist([b], [0], None, [256], [0.0, 255.0])
-        ghist = cv2.calcHist([g], [0], None, [256], [0.0, 255.0])
-        rhist = cv2.calcHist([r], [0], None, [256], [0.0, 255.0])
         bm = max(bhist)
         gm = max(ghist)
         rm = max(rhist)
@@ -96,9 +90,12 @@ class HistIP(BaseIP):
             gn = int(ghist[h])
             rn = int(rhist[h])
             if h != 0:
-                cv2.line(histGraph, (h-1, 255-bStart), (h, 255-bn), colorBlue)
-                cv2.line(histGraph, (h-1, 255-gStart), (h, 255-gn), colorGreen)
-                cv2.line(histGraph, (h-1, 255-rStart), (h, 255-rn), colorRed)
+                cv2.line(histGraph, (h-1, 255-bStart),
+                         (h, 255-bn), [255, 0, 0])
+                cv2.line(histGraph, (h-1, 255-gStart),
+                         (h, 255-gn), [0, 255, 0])
+                cv2.line(histGraph, (h-1, 255-rStart),
+                         (h, 255-rn), [0, 0, 255])
             bStart = bn
             gStart = gn
             rStart = rn
@@ -106,23 +103,27 @@ class HistIP(BaseIP):
 
     @staticmethod
     def MonoEqualize(SrcGray):
-        SrcGray = cv2.equalizeHist(SrcGray)
-        return SrcGray
-
-    class ColorType(enum.IntEnum):
-        USE_RGB = 1
-        USE_HSV = 2
-        USE_YUV = 3
+        EqualizeGray = cv2.equalizeHist(SrcGray)
+        return EqualizeGray
 
     @staticmethod
     def ColorEqualize(SrcColor, CType=ColorType.USE_HSV):
-        hsv = cv2.cvtColor(SrcColor, cv2.COLOR_BGR2HSV)
-        h, s, v = cv2.split(hsv)
-        v2 = cv2.equalizeHist(v)
-        s2 = cv2.equalizeHist(s)
-        img2 = cv2.merge([h, s2, v2])
-        rgb = cv2.cvtColor(img2, cv2.COLOR_HSV2BGR)
-        return rgb
+        if CType == ColorType.USE_RGB:
+            b, g, r = cv2.split(SrcColor)
+            EqualizeBlue = cv2.equalizeHist(b)
+            EqualizeGreen = cv2.equalizeHist(g)
+            EqualizeRed = cv2.equalizeHist(r)
+            EqualizeColor = cv2.merge(
+                [EqualizeBlue, EqualizeGreen, EqualizeRed])
+        elif CType == ColorType.USE_HSV:
+            hsv = cv2.cvtColor(SrcColor, cv2.COLOR_BGR2HSV)
+            hsv[:, :, 2] = cv2.equalizeHist(hsv[:, :, 2])
+            EqualizeColor = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+        elif CType == ColorType.USE_YUV:
+            yuv = cv2.cvtColor(SrcColor, cv2.COLOR_BGR2YUV)
+            yuv[:, :, 0] = cv2.equalizeHist(yuv[:, :, 0])
+            EqualizeColor = cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR)
+        return EqualizeColor
 
     # @staticmethod
     # def HistMatching(SrcImg, RefImg, CType=ColorType.USE_HSV):
