@@ -124,5 +124,5 @@ class HistIP(BaseIP):
         rgb = cv2.cvtColor(img2, cv2.COLOR_HSV2BGR)
         return rgb
 
-    @staticmethod
-    def HistMatching(SrcImg, RefImg, CType=ColorType.USE_HSV):
+    # @staticmethod
+    # def HistMatching(SrcImg, RefImg, CType=ColorType.USE_HSV):
