@@ -113,15 +113,46 @@ class HistIP(BaseIP):
             EqualizeBlue = cv2.equalizeHist(b)
             EqualizeGreen = cv2.equalizeHist(g)
             EqualizeRed = cv2.equalizeHist(r)
+
+            # blue channel
+            bhist = HistIP.CalcGrayHist(b)
+            bhistGraph = HistIP.ShowGrayHist(bhist, [255, 0, 0])
+            HistIP.ImShow("Hist Blue", bhistGraph)
+            # green channel
+            ghist = HistIP.CalcGrayHist(g)
+            ghistGraph = HistIP.ShowGrayHist(ghist, [0, 255, 0])
+            HistIP.ImShow("Hist Green", ghistGraph)
+            # red channel
+            rhist = HistIP.CalcGrayHist(r)
+            rhistGraph = HistIP.ShowGrayHist(rhist, [0, 0, 255])
+            HistIP.ImShow("Hist Red", rhistGraph)
+
+            # get three channels together
+
             EqualizeColor = cv2.merge(
                 [EqualizeBlue, EqualizeGreen, EqualizeRed])
+            bh, gh, rh = HistIP.CalcColorHist(EqualizeColor)
+            histGraph2 = HistIP.ShowColorHist(EqualizeColor, bh, gh, rh)
+            HistIP.ImShow("Hist Color", histGraph2)
         elif CType == ColorType.USE_HSV:
             hsv = cv2.cvtColor(SrcColor, cv2.COLOR_BGR2HSV)
-            hsv[:, :, 2] = cv2.equalizeHist(hsv[:, :, 2])
+            Hist_V = cv2.calcHist(hsv, [2], None, [256], [0, 256])
+            histGraph_V = HistIP.ShowGrayHist(Hist_V, [255, 255, 255])
+            HistIP.ImShow("v", histGraph_V)
+            hsv[:, :, 2] = cv2.equalizeHist(hsv[:, :, 2])  # Value明度
+            Hist_vequ = cv2.calcHist(hsv, [2], None, [256], [0, 256])
+            histGraph_vequ = HistIP.ShowGrayHist(Hist_vequ, [255, 255, 255])
+            HistIP.ImShow("v_equ", histGraph_vequ)
             EqualizeColor = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
         elif CType == ColorType.USE_YUV:
             yuv = cv2.cvtColor(SrcColor, cv2.COLOR_BGR2YUV)
+            Hist_y = cv2.calcHist(yuv, [0], None, [256], [0, 256])
+            histGraph_y = HistIP.ShowGrayHist(Hist_y, [255, 255, 255])
+            HistIP.ImShow("y", histGraph_y)
             yuv[:, :, 0] = cv2.equalizeHist(yuv[:, :, 0])
+            Hist_yequ = cv2.calcHist(yuv, [0], None, [256], [0, 256])
+            histGraph_yequ = HistIP.ShowGrayHist(Hist_yequ, [255, 255, 255])
+            HistIP.ImShow("y_equ", histGraph_yequ)
             EqualizeColor = cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR)
         return EqualizeColor
 
