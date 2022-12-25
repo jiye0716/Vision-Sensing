@@ -39,4 +39,4 @@ for i in range(10, 130, 10):
     back[130:270, 360-i: 500-i, :] = out_girl
     ip.ImWindow("AlphaBlending Result")
     ip.ImShow("AlphaBlending Result", back)
-cv2.waitKey()
+    cv2.waitKey(500)

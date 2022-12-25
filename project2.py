@@ -32,6 +32,5 @@ def EQU_COLOR():
     cv2.waitKey(0)
 
 
-if __name__ == '__main__':
-    #  EQU_Gray()
-    EQU_COLOR()
+# EQU_Gray()
+EQU_COLOR()
