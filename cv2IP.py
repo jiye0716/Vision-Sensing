@@ -158,3 +158,176 @@ class HistIP(BaseIP):
 
     # @staticmethod
     # def HistMatching(SrcImg, RefImg, CType=ColorType.USE_HSV):
+
+
+class SmoothType(enum.IntEnum):
+    BLUR = 1
+    BOX = 2
+    GAUSSIAN = 3
+    MEDIAN = 4
+    BILATERAL = 5
+
+
+class EdgeType(enum.IntEnum):
+    SOBEL = 1
+    CANNY = 2
+    SCHARR = 3
+    LAPLACE = 4
+    COLOR_SOBEL = 5
+
+
+class SharpType(enum.IntEnum):
+    LAPLACE_TYPE1 = 1
+    LAPLACE_TYPE2 = 2
+    SECOND_ORDER_LOG = 3
+    UNSHARP_MASK = 4
+
+
+class ConIP(BaseIP):
+    # 影像平滑
+    @staticmethod
+    def Smooth2D(SrcImg, ksize, SmType=SmoothType.BLUR):
+        source = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2RGB)
+        if(SmType == SmoothType.BLUR):
+            output = cv2.blur(source, (ksize, ksize))  # kernel 大小為 5x5
+        if(SmType == SmoothType.BOX):
+            # 第二個引數的-1表示輸出影象使用的深度與輸入影象相同
+            output = cv2.boxFilter(source, -1, (ksize, ksize))
+        if(SmType == SmoothType.GAUSSIAN):
+            output = cv2.GaussianBlur(source, (ksize, ksize), 0.0)
+        if(SmType == SmoothType.MEDIAN):
+            output = cv2.medianBlur(source, ksize)
+        if(SmType == SmoothType.BILATERAL):
+            output = cv2.bilateralFilter(
+                source, d=0, sigmaColor=100, sigmaSpace=10)
+            # d：鄰域直徑
+            # sigmaColor：顏色標準差 ，引數值較大時意味著在畫素點領域內的更多的顏色會被混合在一起
+            # sigmaSpace：空間標準差，引數的較大值意味著更遠的畫素將與相互影響，只要它們的顏色足夠相近
+        output = cv2.cvtColor(output, cv2.COLOR_RGB2BGR)
+        return output
+
+    @staticmethod
+    def EdgeDetect(SrcImg, EdType=EdgeType.SOBEL):
+        if(EdType == EdgeType.SOBEL):
+            Source = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
+            absx = cv2.convertScaleAbs(cv2.Sobel(Source, cv2.CV_16S, 1, 0))
+            absy = cv2.convertScaleAbs(cv2.Sobel(Source, cv2.CV_16S, 0, 1))
+            output = cv2.addWeighted(absx, 0.5, absy, 0.5, 0)  # 相加/2
+            return output
+
+        if(EdType == EdgeType.CANNY):
+            Source = cv2.GaussianBlur(SrcImg, (3, 3), 0)
+            output = cv2.Canny(Source, 50, 150)
+            return output
+
+        if(EdType == EdgeType.SCHARR):
+            Source = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
+            x = cv2.Scharr(Source, cv2.CV_16S, 1, 0)
+            y = cv2.Scharr(Source, cv2.CV_16S, 0, 1)
+            absx = cv2.convertScaleAbs(x)
+            absy = cv2.convertScaleAbs(y)
+            output = cv2.addWeighted(absx, 0.5, absy, 0.5, 0)
+            return output
+
+        if(EdType == EdgeType.LAPLACE):
+            Source = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
+            result = cv2.Laplacian(Source, cv2.CV_16S, ksize=3)
+            output = cv2.convertScaleAbs(result)  # 轉回uint8
+            return output
+
+        if(EdType == EdgeType.COLOR_SOBEL):
+            b, g, r = cv2.split(SrcImg)
+            absbx = cv2.convertScaleAbs(cv2.Sobel(b, cv2.CV_16S, 1, 0))
+            absby = cv2.convertScaleAbs(cv2.Sobel(b, cv2.CV_16S, 0, 1))
+            absgx = cv2.convertScaleAbs(cv2.Sobel(g, cv2.CV_16S, 1, 0))
+            absgy = cv2.convertScaleAbs(cv2.Sobel(g, cv2.CV_16S, 0, 1))
+            absrx = cv2.convertScaleAbs(cv2.Sobel(r, cv2.CV_16S, 1, 0))
+            absry = cv2.convertScaleAbs(cv2.Sobel(r, cv2.CV_16S, 0, 1))
+            outputb = cv2.addWeighted(absbx, 0.5, absby, 0.5, 0)
+            outputg = cv2.addWeighted(absgx, 0.5, absgy, 0.5, 0)
+            outputr = cv2.addWeighted(absrx, 0.5, absry, 0.5, 0)
+            output = cv2.merge([outputb, outputg, outputr])
+            return output
+
+    @staticmethod
+    def RobertOperator(SrcImg):
+        SrcImg = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
+        # Roberts 算子
+        kernelx = np.array([[1, 0], [0, -1]])
+        kernely = np.array([[0, 1], [-1, 0]])
+
+        x = cv2.filter2D(SrcImg, cv2.CV_16S, kernelx)
+        y = cv2.filter2D(SrcImg, cv2.CV_16S, kernely)
+
+        absx = cv2.convertScaleAbs(x)
+        absy = cv2.convertScaleAbs(y)
+        output = cv2.addWeighted(absx, 0.5, absy, 0.5, 0)
+        return output
+
+    @staticmethod
+    def PrewittOperator(SrcImg):
+        SrcImg = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
+        # Prewitt 算子
+        kernelx = np.array([[1, 1, 1], [0, 0, 0], [-1, -1, -1]])
+        kernely = np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]])
+        # 轉 uint8 ,圖像融合
+        x = cv2.convertScaleAbs(cv2.filter2D(SrcImg, cv2.CV_16S, kernelx))
+        y = cv2.convertScaleAbs(cv2.filter2D(SrcImg, cv2.CV_16S, kernely))
+        output = cv2.addWeighted(x, 0.5, y, 0.5, 0)
+        return output
+
+    @staticmethod
+    def KirschMaskOperator(SrcImg):
+        SrcImg = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
+        G__N = np.array(([[-3, -3, 5], [-3, 0, 5], [-3, -3, 5]]))
+        G_NW = np.array(([[5, -3, -3], [5, 0, -3], [5, -3, -3]]))
+        G__W = np.array(([[-3, 5, 5], [-3, 0, 5], [-3, -3, -3]]))
+        G_SW = np.array(([[-3, -3, -3], [5, 0, -3], [5, 5, -3]]))
+        G__S = np.array(([[5, 5, 5], [-3, 0, -3], [-3, -3, -3, ]]))
+        G_SE = np.array(([[-3, -3, -3], [-3, 0, -3], [5, 5, 5]]))
+        G__E = np.array(([[5, 5, -3], [5, 0, -3], [-3, -3, -3]]))
+        G_NE = np.array(([[-3, -3, -3], [-3, 0, 5], [-3, 5, 5]]))
+
+        G__N_conv = cv2.convertScaleAbs(cv2.filter2D(SrcImg, cv2.CV_16S, G__N))
+        G_NW_conv = cv2.convertScaleAbs(cv2.filter2D(SrcImg, cv2.CV_16S, G_NW))
+        G__W_conv = cv2.convertScaleAbs(cv2.filter2D(SrcImg, cv2.CV_16S, G__W))
+        G_SW_conv = cv2.convertScaleAbs(cv2.filter2D(SrcImg, cv2.CV_16S, G_SW))
+        G__S_conv = cv2.convertScaleAbs(cv2.filter2D(SrcImg, cv2.CV_16S, G__S))
+        G_SE_conv = cv2.convertScaleAbs(cv2.filter2D(SrcImg, cv2.CV_16S, G_SE))
+        G__E_conv = cv2.convertScaleAbs(cv2.filter2D(SrcImg, cv2.CV_16S, G__E))
+        G_NE_conv = cv2.convertScaleAbs(cv2.filter2D(SrcImg, cv2.CV_16S, G_NE))
+
+        output = cv2.max(G__N_conv, cv2.max(G_NW_conv, cv2.max(G__W_conv, cv2.max(
+            G_SW_conv, cv2.max(G__S_conv, cv2.max(G_SE_conv, cv2.max(G__E_conv, G_NE_conv)))))))
+        return output
+
+    @staticmethod
+    def Conv2D(SrcImg, kernel):
+        out = cv2.filter2D(SrcImg, -1, kernel)
+        return out
+    # 影像銳利化
+
+    @staticmethod
+    # , SmoothType=SmoothType.BILATERAL
+    def ImSharpening(SrcImg, SpType=SharpType.UNSHARP_MASK):
+        if(SpType == SharpType.LAPLACE_TYPE1):
+            kernel = np.array(
+                [[0, -1, 0], [-1, 4, -1], [0, -1, 0]], np.float32)
+            output = ConIP.Conv2D(SrcImg, kernel)
+            return output
+        if(SpType == SharpType.LAPLACE_TYPE2):
+            kernel = np.array([[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]])
+            output = ConIP.Conv2D(SrcImg, kernel)
+            return output
+        if(SpType == SharpType.SECOND_ORDER_LOG):
+            img = cv2.GaussianBlur(SrcImg, (3, 3), 0.0)
+            laplacian = cv2.Laplacian(img, cv2.CV_16S, ksize=3)
+            output = cv2.convertScaleAbs(laplacian)
+            return output
+        if(SpType == SharpType.UNSHARP_MASK):
+            img = cv2.GaussianBlur(SrcImg, (0, 0), 5)
+            sharpened = float(1.0 + 1) * SrcImg - float(1.0) * img
+            sharpened = np.maximum(sharpened, np.zeros(sharpened.shape))
+            sharpened = np.minimum(sharpened, 255 * np.ones(sharpened.shape))
+            output = sharpened.round().astype(np.uint8)
+            return output
