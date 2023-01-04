@@ -205,60 +205,67 @@ class ConIP(BaseIP):
             # sigmaSpace：空間標準差，引數的較大值意味著更遠的畫素將與相互影響，只要它們的顏色足夠相近
         output = cv2.cvtColor(output, cv2.COLOR_RGB2BGR)
         return output
+    # 邊緣偵測
 
     @staticmethod
     def EdgeDetect(SrcImg, EdType=EdgeType.SOBEL):
         if(EdType == EdgeType.SOBEL):
             Source = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
-            absx = cv2.convertScaleAbs(cv2.Sobel(Source, cv2.CV_16S, 1, 0))
-            absy = cv2.convertScaleAbs(cv2.Sobel(Source, cv2.CV_16S, 0, 1))
-            output = cv2.addWeighted(absx, 0.5, absy, 0.5, 0)  # 相加/2
-            return output
-
+            sobel_x = cv2.Sobel(Source, cv2.CV_16S, 1, 0)  # 垂直偵測
+            sobel_y = cv2.Sobel(Source, cv2.CV_16S, 0, 1)  # 水平偵測
+            absx = np.abs(sobel_x).astype('uint8')
+            absy = np.abs(sobel_y).astype('uint8')
+            dst = cv2.addWeighted(absx, 0.5, absy, 0.5, 0)
+            return absx, absy, dst
         if(EdType == EdgeType.CANNY):
-            Source = cv2.GaussianBlur(SrcImg, (3, 3), 0)
-            output = cv2.Canny(Source, 50, 150)
+            kernel = 3
+            min_threshold = 50  # 最小門檻值
+            max_threshold = 150  # 最大門檻值
+            Source = cv2.GaussianBlur(SrcImg, (kernel, kernel), 0)
+            output = cv2.Canny(Source, min_threshold, max_threshold)
             return output
-
         if(EdType == EdgeType.SCHARR):
             Source = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
             x = cv2.Scharr(Source, cv2.CV_16S, 1, 0)
             y = cv2.Scharr(Source, cv2.CV_16S, 0, 1)
-            absx = cv2.convertScaleAbs(x)
-            absy = cv2.convertScaleAbs(y)
+            absx = np.abs(x).astype('uint8')
+            absy = np.abs(y).astype('uint8')
             output = cv2.addWeighted(absx, 0.5, absy, 0.5, 0)
             return output
-
         if(EdType == EdgeType.LAPLACE):
             Source = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
-            result = cv2.Laplacian(Source, cv2.CV_16S, ksize=3)
-            output = cv2.convertScaleAbs(result)  # 轉回uint8
+            laplacian_img = cv2.Laplacian(Source, cv2.CV_16S, ksize=3)
+            output = np.abs(laplacian_img).astype('uint8')
             return output
-
         if(EdType == EdgeType.COLOR_SOBEL):
             b, g, r = cv2.split(SrcImg)
-            absbx = cv2.convertScaleAbs(cv2.Sobel(b, cv2.CV_16S, 1, 0))
-            absby = cv2.convertScaleAbs(cv2.Sobel(b, cv2.CV_16S, 0, 1))
-            absgx = cv2.convertScaleAbs(cv2.Sobel(g, cv2.CV_16S, 1, 0))
-            absgy = cv2.convertScaleAbs(cv2.Sobel(g, cv2.CV_16S, 0, 1))
-            absrx = cv2.convertScaleAbs(cv2.Sobel(r, cv2.CV_16S, 1, 0))
-            absry = cv2.convertScaleAbs(cv2.Sobel(r, cv2.CV_16S, 0, 1))
+            bx = cv2.Sobel(b, cv2.CV_16S, 1, 0)
+            by = cv2.Sobel(b, cv2.CV_16S, 0, 1)
+            gx = cv2.Sobel(g, cv2.CV_16S, 1, 0)
+            gy = cv2.Sobel(g, cv2.CV_16S, 0, 1)
+            rx = cv2.Sobel(r, cv2.CV_16S, 1, 0)
+            ry = cv2.Sobel(r, cv2.CV_16S, 0, 1)
+            absbx = np.abs(bx).astype('uint8')
+            absby = np.abs(by).astype('uint8')
+            absgx = np.abs(gx).astype('uint8')
+            absgy = np.abs(gy).astype('uint8')
+            absrx = np.abs(rx).astype('uint8')
+            absry = np.abs(ry).astype('uint8')
             outputb = cv2.addWeighted(absbx, 0.5, absby, 0.5, 0)
             outputg = cv2.addWeighted(absgx, 0.5, absgy, 0.5, 0)
             outputr = cv2.addWeighted(absrx, 0.5, absry, 0.5, 0)
             output = cv2.merge([outputb, outputg, outputr])
             return output
 
+    # 二維卷積
     @staticmethod
     def RobertOperator(SrcImg):
         SrcImg = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
         # Roberts 算子
         kernelx = np.array([[1, 0], [0, -1]])
         kernely = np.array([[0, 1], [-1, 0]])
-
         x = cv2.filter2D(SrcImg, cv2.CV_16S, kernelx)
         y = cv2.filter2D(SrcImg, cv2.CV_16S, kernely)
-
         absx = cv2.convertScaleAbs(x)
         absy = cv2.convertScaleAbs(y)
         output = cv2.addWeighted(absx, 0.5, absy, 0.5, 0)
